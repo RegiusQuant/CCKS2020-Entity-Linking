@@ -1,0 +1,7 @@
+# 数据文件：
+- kb.json:知识库文件
+- train.json:训练集
+- dev.json:验证集
+- test.json: 测试集输入（平台提交预测结果的文件）
+- eval.py: 评估脚本（线下调试使用）
+- CCKS 2020 Entity Linking License: 参赛者协议，平台上已确认并同意
