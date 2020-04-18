@@ -11,10 +11,10 @@
 @brief:
     Entity Linking效果评估脚本，评价指标Micro-F1
 """
-import sys
+# import sys
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
+# reload(sys)
+# sys.setdefaultencoding('utf-8')
 import json
 from collections import defaultdict
 
@@ -53,18 +53,18 @@ class Eval(object):
                 flag = False
                 self.errno = 3
                 break
-            if not isinstance(json_info['text_id'], unicode):
-                flag = False
-                self.errno = 4
-                break
+            # if not isinstance(json_info['text_id'], unicode):
+            #     flag = False
+            #     self.errno = 4
+            #     break
             if not json_info['text_id'].isdigit():
                 flag = False
                 self.errno = 5
                 break
-            if not isinstance(json_info['text'], unicode):
-                flag = False
-                self.errno = 6
-                break
+            # if not isinstance(json_info['text'], unicode):
+            #     flag = False
+            #     self.errno = 6
+            #     break
             if not isinstance(json_info['mention_data'], list):
                 flag = False
                 self.errno = 7
@@ -82,18 +82,18 @@ class Eval(object):
                     flag = False
                     self.errno = 9
                     break
-                if not isinstance(mention_info['kb_id'], unicode):
-                    flag = False
-                    self.errno = 10
-                    break
-                if not isinstance(mention_info['mention'], unicode):
-                    flag = False
-                    self.errno = 11
-                    break
-                if not isinstance(mention_info['offset'], unicode):
-                    flag = False
-                    self.errno = 12
-                    break
+                # if not isinstance(mention_info['kb_id'], unicode):
+                #     flag = False
+                #     self.errno = 10
+                #     break
+                # if not isinstance(mention_info['mention'], unicode):
+                #     flag = False
+                #     self.errno = 11
+                #     break
+                # if not isinstance(mention_info['offset'], unicode):
+                #     flag = False
+                #     self.errno = 12
+                #     break
                 if not mention_info['offset'].isdigit():
                     flag = False
                     self.errno = 13
@@ -158,6 +158,7 @@ class Eval(object):
                     golden_dict[key][1] = 1
                 else:
                     self.fp += 1
+        print(self.tp, self.fp)
         if self.tp + self.fp > 0:
             precision = float(self.tp) / (self.tp + self.fp)
         if self.total_recall > 0:
@@ -173,8 +174,14 @@ class Eval(object):
 if __name__ == '__main__':
     # utf-8格式
     # 输入golden文件，预测文件
-    eval = Eval('./test_result.json', './result.json')
+    # eval = Eval('./test_result.json', './result.json')
+    # prec, recall, f1 = eval.micro_f1()
+    # print prec, recall, f1
+    # if eval.errno:
+    #     print eval.errno
+
+    eval = Eval('../data/ccks2020_el_data_v1/dev.json', '../data/ccks2020_el_data_v1/dev.json')
     prec, recall, f1 = eval.micro_f1()
-    print prec, recall, f1
+    print(prec, recall, f1)
     if eval.errno:
-        print eval.errno
+        print(eval.errno)
