@@ -41,8 +41,10 @@ class EntityLinkingDataProcessor:
 
                 data_list = []
                 for x in temp['data']:
-                    data_list.append(':'.join([x['predicate'], x['object']]))
+                    data_list.append(':'.join([x['predicate'].strip(), x['object'].strip()]))
                 kbid_to_text[kbid] = ' '.join(data_list)
+                for c in ['\r', '\t', '\n']:
+                    kbid_to_text[kbid] = kbid_to_text[kbid].replace(c, '')
 
                 type_list = temp['type'].split('|')
                 kbid_to_types[kbid] = type_list
