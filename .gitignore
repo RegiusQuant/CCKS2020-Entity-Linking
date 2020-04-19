@@ -135,3 +135,5 @@ dmypy.json
 *.json
 # CCKS Pickle Data
 *.pkl
+# CCKS CSV Data
+*.csv
