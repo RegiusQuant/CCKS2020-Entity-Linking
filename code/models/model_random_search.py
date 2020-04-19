@@ -21,7 +21,7 @@ class RandomSearchModel:
         pass
 
     @staticmethod
-    def generate_result(pickle_path, file_path, save_path):
+    def generate_result(file_path, save_path, pickle_path):
         entity_to_kbids = pd.read_pickle(pickle_path / 'entity_to_kbids.pkl')
         idx_to_type = pd.read_pickle(pickle_path / 'idx_to_type.pkl')
 
@@ -43,12 +43,16 @@ class RandomSearchModel:
                 f.write('\n')
 
 
-if __name__ == '__main__':
+def main():
     data_path = Path('../../data')
     file_path = data_path / 'ccks2020_el_data_v1' / 'dev.json'
     pickle_path = data_path / 'pickle'
     save_path = data_path / 'result' / 'result.json'
-    RandomSearchModel.generate_result(pickle_path, file_path, save_path)
+    RandomSearchModel.generate_result(file_path, save_path, pickle_path)
     e = eval.Eval(file_path, save_path)
     prec, recall, f1 = e.micro_f1()
     print(prec, recall, f1)
+
+
+if __name__ == '__main__':
+    main()
