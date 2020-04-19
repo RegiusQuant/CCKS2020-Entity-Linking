@@ -137,3 +137,5 @@ dmypy.json
 *.pkl
 # CCKS CSV Data
 *.csv
+# PyTorch CKPT
+*.ckpt
