@@ -158,7 +158,6 @@ class Eval(object):
                     golden_dict[key][1] = 1
                 else:
                     self.fp += 1
-        print(self.tp, self.fp)
         if self.tp + self.fp > 0:
             precision = float(self.tp) / (self.tp + self.fp)
         if self.total_recall > 0:
@@ -180,7 +179,9 @@ if __name__ == '__main__':
     # if eval.errno:
     #     print eval.errno
 
-    eval = Eval('../data/ccks2020_el_data_v1/dev.json', '../data/ccks2020_el_data_v1/dev.json')
+    eval = Eval('../data/ccks2020_el_data_v1/dev.json', '../data/result/result.json')
+    # eval = Eval('../data/result/result.json', '../data/ccks2020_el_data_v1/dev.json')
+
     prec, recall, f1 = eval.micro_f1()
     print(prec, recall, f1)
     if eval.errno:
