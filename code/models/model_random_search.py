@@ -29,9 +29,8 @@ class RandomSearchModel:
         with open(file_path, 'r') as f:
             for i, line in enumerate(f):
                 temp = json.loads(line)
-                for i, data in enumerate(temp['mention_data']):
+                for _, data in enumerate(temp['mention_data']):
                     if data['mention'] in entity_to_kbids:
-                        #                 print(data['mention'], entity_to_kbids[data['mention']])
                         data['kb_id'] = random.choice(list(entity_to_kbids[data['mention']]))
                     else:
                         data['kb_id'] = 'NIL_' + random.choice(idx_to_type)
