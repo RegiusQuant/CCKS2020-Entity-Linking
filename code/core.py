@@ -7,6 +7,7 @@
 
 import os
 import json
+import logging
 import random
 from collections import defaultdict
 
@@ -25,6 +26,11 @@ from transformers import (
     BertForSequenceClassification,
     glue_convert_examples_to_features,
 )
+
+# 预训练模型路径
+PRETRAINED_PATH = '/media/bnu/data/transformers-pretrained-model/chinese_roberta_wwm_ext_pytorch/'
+# 实体链接训练路径
+EL_SAVE_PATH = '/media/bnu/data/pytorch-lightning-checkpoints/EntityLinking/'
 
 # 项目数据路径
 DATA_PATH = '../data/'

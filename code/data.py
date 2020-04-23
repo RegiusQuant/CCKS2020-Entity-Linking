@@ -7,6 +7,8 @@
 
 from core import *
 
+logger = logging.getLogger(__name__)
+
 
 class PicklePreprocessor:
     """生成全局变量Pickle文件的预处理器"""
@@ -73,6 +75,7 @@ class PicklePreprocessor:
                      PICKLE_PATH + 'KBID_TO_PREDICATES.pkl')
         pd.to_pickle(self.idx_to_type, PICKLE_PATH + 'IDX_TO_TYPE.pkl')
         pd.to_pickle(self.type_to_idx, PICKLE_PATH + 'TYPE_TO_IDX.pkl')
+        logger.info('Process Pickle File Finish.')
 
 
 class DataFramePreprocessor:
@@ -162,32 +165,32 @@ class DataFramePreprocessor:
             output_path=TSV_PATH + 'EL_TRAIN.tsv',
             max_negs=2,
         )
-        print('Process EL_TRAIN Finish.')
+        logger.info('Process EL_TRAIN Finish.')
         self.process_link_data(
             input_path=RAW_PATH + 'dev.json',
             output_path=TSV_PATH + 'EL_VALID.tsv',
             max_negs=-1,
         )
-        print('Process EL_VALID Finish.')
+        logger.info('Process EL_VALID Finish.')
         self.process_link_data(
             input_path=RAW_PATH + 'test.json',
             output_path=TSV_PATH + 'EL_TEST.tsv',
             max_negs=-1,
         )
-        print('Process EL_TEST Finish.')
+        logger.info('Process EL_TEST Finish.')
 
         self.process_type_data(
             input_path=RAW_PATH + 'train.json',
             output_path=TSV_PATH + 'ET_TRAIN.tsv',
         )
-        print('Process ET_TRAIN Finish.')
+        logger.info('Process ET_TRAIN Finish.')
         self.process_type_data(
             input_path=RAW_PATH + 'dev.json',
             output_path=TSV_PATH + 'ET_VALID.tsv',
         )
-        print('Process ET_VALID Finish.')
+        logger.info('Process ET_VALID Finish.')
         self.process_type_data(
             input_path=RAW_PATH + 'test.json',
             output_path=TSV_PATH + 'ET_TEST.tsv',
         )
-        print('Process ET_TEST Finish.')
+        logger.info('Process ET_TEST Finish.')

@@ -2,3 +2,4 @@
 # YAPF uses the chromium style
 based_on_style = chromium
 indent_width: 4
+column_limit: 120
