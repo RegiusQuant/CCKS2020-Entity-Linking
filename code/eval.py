@@ -171,16 +171,7 @@ class Eval(object):
 
 
 if __name__ == '__main__':
-    # utf-8格式
-    # 输入golden文件，预测文件
-    # eval = Eval('./test_result.json', './result.json')
-    # prec, recall, f1 = eval.micro_f1()
-    # print prec, recall, f1
-    # if eval.errno:
-    #     print eval.errno
-
-    eval = Eval('../data/ccks2020_el_data_v1/dev.json', '../data/result/result.json')
-    # eval = Eval('../data/result/result.json', '../data/ccks2020_el_data_v1/dev.json')
+    eval = Eval('../data/ccks2020_el_data_v1/dev.json', '../data/result/dev_result.json')
 
     prec, recall, f1 = eval.micro_f1()
     print(prec, recall, f1)
