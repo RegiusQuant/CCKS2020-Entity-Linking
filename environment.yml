@@ -1,0 +1,29 @@
+name: nlp
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - numpy
+  - yapf
+  - nltk
+  - matplotlib
+  - pandas
+  - scikit-learn
+  - xlrd
+  - pytorch
+  - jieba
+  - jupyter
+  - yaml
+  - pyyaml
+  - jupyter_contrib_nbextensions
+  - tensorflow-gpu
+  - keras-gpu
+  - gensim
+  - torchvision
+  - torchtext
+  - sentencepiece
+  - fastai
+  - future
+  - seaborn
+prefix: /home/bnu/miniconda3/envs/nlp
+

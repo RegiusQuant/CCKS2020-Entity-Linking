@@ -135,7 +135,7 @@ dmypy.json
 *.json
 # CCKS Pickle Data
 *.pkl
-# CCKS CSV Data
-*.csv
+# CCKS TSV Data
+*.tsv
 # PyTorch CKPT
 *.ckpt
