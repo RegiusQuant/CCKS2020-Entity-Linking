@@ -34,6 +34,8 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available else 'cpu')
 PRETRAINED_PATH = '/media/bnu/data/transformers-pretrained-model/chinese_roberta_wwm_ext_pytorch/'
 # 实体链接训练路径
 EL_SAVE_PATH = '/media/bnu/data/pytorch-lightning-checkpoints/EntityLinking/'
+# 实体类别推断训练路径
+ET_SAVE_PATH = '/media/bnu/data/pytorch-lightning-checkpoints/EntityTyping/'
 
 # 项目数据路径
 DATA_PATH = '../data/'

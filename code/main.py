@@ -11,6 +11,11 @@ from models.entity_linking_roberta import (
     EntityLinkingProcessor,
     EntityLinkingPredictor,
 )
+from models.entity_typing_roberta import (
+    EntityTypingModel,
+    EntityTypingProcessor,
+    EntityTypingPredictor,
+)
 from core import *
 
 
@@ -26,36 +31,10 @@ def preprocess_tsv_file():
 
 def generate_feature_pickle():
     processor = EntityLinkingProcessor()
-    tokenizer = BertTokenizer.from_pretrained(PRETRAINED_PATH)
+    processor.generate_feature_pickle(max_length=384)
 
-    train_examples = processor.get_train_examples(TSV_PATH + 'EL_TRAIN.tsv')
-    valid_examples = processor.get_dev_examples(TSV_PATH + 'EL_VALID.tsv')
-    test_examples = processor.get_test_examples(TSV_PATH + 'EL_TEST.tsv')
-
-    processor.create_dataloader(
-        examples=train_examples,
-        tokenizer=tokenizer,
-        max_length=384,
-        shuffle=True,
-        batch_size=32,
-        use_pickle=False,
-    )
-    processor.create_dataloader(
-        examples=valid_examples,
-        tokenizer=tokenizer,
-        max_length=384,
-        shuffle=False,
-        batch_size=32,
-        use_pickle=False,
-    )
-    processor.create_dataloader(
-        examples=test_examples,
-        tokenizer=tokenizer,
-        max_length=384,
-        shuffle=False,
-        batch_size=32,
-        use_pickle=False,
-    )
+    processor = EntityTypingProcessor()
+    processor.generate_feature_pickle(max_length=64)
 
 
 def train_entity_linking_model(ckpt_name):
@@ -71,10 +50,29 @@ def train_entity_linking_model(ckpt_name):
     trainer.save_checkpoint(CKPT_PATH + ckpt_name)
 
 
-def generate_tsv_result(ckpt_name):
+def train_entity_typing_model(ckpt_name):
+    model = EntityTypingModel(max_length=64, batch_size=64)
+    trainer = pl.Trainer(
+        max_epochs=2,
+        gpus=2,
+        distributed_backend='dp',
+        default_save_path=ET_SAVE_PATH,
+        profiler=True,
+    )
+    trainer.fit(model)
+    trainer.save_checkpoint(CKPT_PATH + ckpt_name)
+
+
+def generate_link_tsv_result(ckpt_name):
     predictor = EntityLinkingPredictor(ckpt_name, batch_size=24, use_pickle=True)
-    # predictor.generate_tsv_result('EL_VALID.tsv', tsv_type='Valid')
+    predictor.generate_tsv_result('EL_VALID.tsv', tsv_type='Valid')
     predictor.generate_tsv_result('EL_TEST.tsv', tsv_type='Test')
+
+
+def generate_type_tsv_result(ckpt_name):
+    predictor = EntityTypingPredictor(ckpt_name, batch_size=64, use_pickle=True)
+    predictor.generate_tsv_result('ET_VALID.tsv', tsv_type='Valid')
+    predictor.generate_tsv_result('ET_TEST.tsv', tsv_type='Test')
 
 
 if __name__ == '__main__':
@@ -82,5 +80,9 @@ if __name__ == '__main__':
     # preprocess_pickle_file()
     # preprocess_tsv_file()
     # generate_feature_pickle()
+
     # train_entity_linking_model('EL_BASE_EPOCH0.ckpt')
-    generate_tsv_result('EL_BASE_EPOCH0.ckpt')
+    # generate_link_tsv_result('EL_BASE_EPOCH0.ckpt')
+
+    # train_entity_typing_model('ET_BASE_EPOCH1.ckpt')
+    generate_type_tsv_result('ET_BASE_EPOCH1.ckpt')

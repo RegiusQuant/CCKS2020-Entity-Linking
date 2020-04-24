@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2020/4/23 下午9:32
+# @Time    : 2020/4/24 下午6:51
 # @Author  : RegiusQuant <315135833@qq.com>
 # @Project : CCKS2020-Entity-Linking
-# @File    : entity_linking_roberta.py
-# @Desc    : 实体链接RoBERTa模型
+# @File    : entity_typing_roberta.py
+# @Desc    : 实体类别推断RoBERTa模型
 
 from core import *
 
 
-class EntityLinkingProcessor(DataProcessor):
+class EntityTypingProcessor(DataProcessor):
     """实体链接数据处理"""
 
     def get_train_examples(self, file_path):
@@ -30,7 +30,7 @@ class EntityLinkingProcessor(DataProcessor):
         )
 
     def get_labels(self):
-        return ['0', '1']
+        return PICKLE_DATA['IDX_TO_TYPE']
 
     def _create_examples(self, lines, set_type):
         examples = []
@@ -38,8 +38,8 @@ class EntityLinkingProcessor(DataProcessor):
             if i == 0:
                 continue
             guid = f'{set_type}-{i}'
-            text_a = line[1] + ' ' + line[3]
-            text_b = line[5]
+            text_a = line[1]
+            text_b = line[3]
             label = line[-1]
             examples.append(InputExample(
                 guid=guid,
@@ -49,9 +49,9 @@ class EntityLinkingProcessor(DataProcessor):
             ))
         return examples
 
-    def create_dataloader(self, examples, tokenizer, max_length=384,
-                          shuffle=False, batch_size=32, use_pickle=False):
-        pickle_name = 'EL_FEATURE_' + examples[0].guid.split('-')[0].upper() + '.pkl'
+    def create_dataloader(self, examples, tokenizer, max_length=64,
+                          shuffle=False, batch_size=64, use_pickle=False):
+        pickle_name = 'ET_FEATURE_' + examples[0].guid.split('-')[0].upper() + '.pkl'
         if use_pickle:
             features = pd.read_pickle(PICKLE_PATH + pickle_name)
         else:
@@ -85,9 +85,9 @@ class EntityLinkingProcessor(DataProcessor):
     def generate_feature_pickle(self, max_length):
         tokenizer = BertTokenizer.from_pretrained(PRETRAINED_PATH)
 
-        train_examples = self.get_train_examples(TSV_PATH + 'EL_TRAIN.tsv')
-        valid_examples = self.get_dev_examples(TSV_PATH + 'EL_VALID.tsv')
-        test_examples = self.get_test_examples(TSV_PATH + 'EL_TEST.tsv')
+        train_examples = self.get_train_examples(TSV_PATH + 'ET_TRAIN.tsv')
+        valid_examples = self.get_dev_examples(TSV_PATH + 'ET_VALID.tsv')
+        test_examples = self.get_test_examples(TSV_PATH + 'ET_TEST.tsv')
 
         self.create_dataloader(
             examples=train_examples,
@@ -114,12 +114,11 @@ class EntityLinkingProcessor(DataProcessor):
             use_pickle=False,
         )
 
+class EntityTypingModel(pl.LightningModule):
+    """实体类型推断模型"""
 
-class EntityLinkingModel(pl.LightningModule):
-    """实体链接模型"""
-
-    def __init__(self, max_length=384, batch_size=32, use_pickle=True):
-        super(EntityLinkingModel, self).__init__()
+    def __init__(self, max_length=64, batch_size=64, use_pickle=True):
+        super(EntityTypingModel, self).__init__()
         # 输入最大长度
         self.max_length = max_length
         self.batch_size = batch_size
@@ -129,7 +128,7 @@ class EntityLinkingModel(pl.LightningModule):
 
         # 预训练模型配置信息
         self.config = BertConfig.from_json_file(PRETRAINED_PATH + 'bert_config.json')
-        self.config.num_labels = 1
+        self.config.num_labels = len(PICKLE_DATA['IDX_TO_TYPE'])
 
         # 预训练模型
         self.bert = BertForSequenceClassification.from_pretrained(
@@ -138,21 +137,20 @@ class EntityLinkingModel(pl.LightningModule):
         )
 
         # 二分类损失函数
-        self.criterion = nn.BCEWithLogitsLoss()
+        self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, input_ids, attention_mask, token_type_ids):
-        logits = self.bert(
+        return self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
         )[0]
-        return logits.squeeze()
 
     def prepare_data(self):
-        self.processor = EntityLinkingProcessor()
-        self.train_examples = self.processor.get_train_examples(TSV_PATH + 'EL_TRAIN.tsv')
-        self.valid_examples = self.processor.get_dev_examples(TSV_PATH + 'EL_VALID.tsv')
-        self.test_examples = self.processor.get_test_examples(TSV_PATH + 'EL_TEST.tsv')
+        self.processor = EntityTypingProcessor()
+        self.train_examples = self.processor.get_train_examples(TSV_PATH + 'ET_TRAIN.tsv')
+        self.valid_examples = self.processor.get_dev_examples(TSV_PATH + 'ET_VALID.tsv')
+        self.test_examples = self.processor.get_test_examples(TSV_PATH + 'ET_TEST.tsv')
 
         self.train_loader = self.processor.create_dataloader(
             examples=self.train_examples,
@@ -181,10 +179,10 @@ class EntityLinkingModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         input_ids, attention_mask, token_type_ids, labels = batch
-        logits = self(input_ids, attention_mask, token_type_ids)
-        loss = self.criterion(logits, labels.float())
+        outputs = self(input_ids, attention_mask, token_type_ids)
+        loss = self.criterion(outputs, labels)
 
-        preds = (logits > 0).int()
+        _, preds = torch.max(outputs, dim=1)
         acc = (preds == labels).float().mean()
 
         tensorboard_logs = {'train_loss': loss, 'train_acc': acc}
@@ -192,10 +190,10 @@ class EntityLinkingModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         input_ids, attention_mask, token_type_ids, labels = batch
-        logits = self(input_ids, attention_mask, token_type_ids)
-        loss = self.criterion(logits, labels.float())
+        outputs = self(input_ids, attention_mask, token_type_ids)
+        loss = self.criterion(outputs, labels)
 
-        preds = (logits > 0).int()
+        _, preds = torch.max(outputs, dim=1)
         acc = (preds == labels).float().mean()
 
         return {'val_loss': loss, 'val_acc': acc}
@@ -217,7 +215,7 @@ class EntityLinkingModel(pl.LightningModule):
         return self.valid_loader
 
 
-class EntityLinkingPredictor:
+class EntityTypingPredictor:
 
     def __init__(self, ckpt_name, batch_size=8, use_pickle=True):
         self.ckpt_name = ckpt_name
@@ -225,7 +223,7 @@ class EntityLinkingPredictor:
         self.use_pickle = use_pickle
 
     def generate_tsv_result(self, tsv_name, tsv_type='Valid'):
-        processor = EntityLinkingProcessor()
+        processor = EntityTypingProcessor()
         tokenizer = BertTokenizer.from_pretrained(PRETRAINED_PATH)
 
         if tsv_type == 'Valid':
@@ -237,33 +235,32 @@ class EntityLinkingPredictor:
         dataloader = processor.create_dataloader(
             examples=examples,
             tokenizer=tokenizer,
-            max_length=384,
+            max_length=64,
             shuffle=False,
             batch_size=self.batch_size,
             use_pickle=self.use_pickle,
         )
 
-        model = EntityLinkingModel.load_from_checkpoint(
+        model = EntityTypingModel.load_from_checkpoint(
             checkpoint_path=CKPT_PATH + self.ckpt_name,
         )
         model.to(DEVICE)
         model = nn.DataParallel(model)
         model.eval()
 
-        result_list, logit_list = [], []
+        result_list = []
         for batch in tqdm(dataloader):
             for i in range(len(batch)):
                 batch[i] = batch[i].to(DEVICE)
 
             input_ids, attention_mask, token_type_ids, labels = batch
-            logits = model(input_ids, attention_mask, token_type_ids)
-            preds = (logits > 0).int()
-
+            outputs = model(input_ids, attention_mask, token_type_ids)
+            _, preds = torch.max(outputs, dim=1)
             result_list.extend(preds.tolist())
-            logit_list.extend(logits.tolist())
 
+        idx_to_type = PICKLE_DATA['IDX_TO_TYPE']
+        result_list = [idx_to_type[x] for x in result_list]
         tsv_data = pd.read_csv(TSV_PATH + tsv_name, sep='\t')
-        tsv_data['logits'] = logit_list
         tsv_data['result'] = result_list
         result_name = tsv_name.split('.')[0] + '_RESULT.tsv'
         tsv_data.to_csv(RESULT_PATH + result_name, index=False, sep='\t')
