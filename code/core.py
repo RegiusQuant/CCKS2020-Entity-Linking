@@ -18,6 +18,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from tqdm import tqdm
+from sklearn.metrics import accuracy_score
 from transformers import (
     DataProcessor,
     InputExample,
@@ -26,6 +27,8 @@ from transformers import (
     BertForSequenceClassification,
     glue_convert_examples_to_features,
 )
+
+DEVICE = torch.device('cuda:0' if torch.cuda.is_available else 'cpu')
 
 # 预训练模型路径
 PRETRAINED_PATH = '/media/bnu/data/transformers-pretrained-model/chinese_roberta_wwm_ext_pytorch/'
@@ -43,10 +46,19 @@ PICKLE_PATH = DATA_PATH + 'pickle/'
 if not os.path.exists(PICKLE_PATH):
     os.mkdir(PICKLE_PATH)
 
+# 预测结果的文件路径
+RESULT_PATH = DATA_PATH + 'result/'
+if not os.path.exists(RESULT_PATH):
+    os.mkdir(RESULT_PATH)
+
 # 训练、验证、推断所需的tsv文件路径
 TSV_PATH = DATA_PATH + 'tsv/'
 if not os.path.exists(TSV_PATH):
     os.mkdir(TSV_PATH)
+
+# 训练结果的CheckPoint文件路径
+CKPT_PATH = '../ckpt/'
+
 
 PICKLE_DATA = {
     # 实体名称对应的KBID列表

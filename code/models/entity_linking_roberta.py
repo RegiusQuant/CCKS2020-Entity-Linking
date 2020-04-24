@@ -49,27 +49,36 @@ class EntityLinkingProcessor(DataProcessor):
             ))
         return examples
 
-    def create_dataloader(self, examples, tokenizer, max_length=384, shuffle=False, batch_size=32):
-
-        features = glue_convert_examples_to_features(
-            examples,
-            tokenizer,
-            label_list=self.get_labels(),
-            max_length=max_length,
-            output_mode='classification',
-            pad_on_left=False,
-            pad_token=tokenizer.pad_token_id,
-            pad_token_segment_id=0,
-        )
+    def create_dataloader(self, examples, tokenizer, max_length=384,
+                          shuffle=False, batch_size=32, use_pickle=False):
+        pickle_name = 'EL_FEATURE_' + examples[0].guid.split('-')[0].upper() + '.pkl'
+        if use_pickle:
+            features = pd.read_pickle(PICKLE_PATH + pickle_name)
+        else:
+            features = glue_convert_examples_to_features(
+                examples,
+                tokenizer,
+                label_list=self.get_labels(),
+                max_length=max_length,
+                output_mode='classification',
+                pad_on_left=False,
+                pad_token=tokenizer.pad_token_id,
+                pad_token_segment_id=0,
+            )
+            pd.to_pickle(features, PICKLE_PATH + pickle_name)
 
         dataset = torch.utils.data.TensorDataset(
-            torch.LongTensor([f.input_ids for f in features]), torch.LongTensor([f.attention_mask for f in features]),
-            torch.LongTensor([f.token_type_ids for f in features]), torch.LongTensor([f.label for f in features]))
+            torch.LongTensor([f.input_ids for f in features]),
+            torch.LongTensor([f.attention_mask for f in features]),
+            torch.LongTensor([f.token_type_ids for f in features]),
+            torch.LongTensor([f.label for f in features]),
+        )
 
         dataloader = torch.utils.data.DataLoader(
             dataset,
             shuffle=shuffle,
             batch_size=batch_size,
+            num_workers=2,
         )
         return dataloader
 
@@ -77,11 +86,12 @@ class EntityLinkingProcessor(DataProcessor):
 class EntityLinkingModel(pl.LightningModule):
     """实体链接模型"""
 
-    def __init__(self, max_length=384, batch_size=32):
+    def __init__(self, max_length=384, batch_size=32, use_pickle=True):
         super(EntityLinkingModel, self).__init__()
         # 输入最大长度
         self.max_length = max_length
         self.batch_size = batch_size
+        self.use_pickle = use_pickle
 
         self.tokenizer = BertTokenizer.from_pretrained(PRETRAINED_PATH)
 
@@ -118,6 +128,7 @@ class EntityLinkingModel(pl.LightningModule):
             max_length=self.max_length,
             shuffle=True,
             batch_size=32,
+            use_pickle=self.use_pickle,
         )
         self.valid_loader = self.processor.create_dataloader(
             examples=self.valid_examples,
@@ -125,6 +136,7 @@ class EntityLinkingModel(pl.LightningModule):
             max_length=self.max_length,
             shuffle=False,
             batch_size=32,
+            use_pickle=self.use_pickle,
         )
         self.test_loader = self.processor.create_dataloader(
             examples=self.test_examples,
@@ -132,6 +144,7 @@ class EntityLinkingModel(pl.LightningModule):
             max_length=self.max_length,
             shuffle=False,
             batch_size=32,
+            use_pickle=self.use_pickle,
         )
 
     def training_step(self, batch, batch_idx):
@@ -170,3 +183,55 @@ class EntityLinkingModel(pl.LightningModule):
 
     def val_dataloader(self):
         return self.valid_loader
+
+
+class EntityLinkingPredictor:
+
+    def __init__(self, ckpt_name, batch_size=8, use_pickle=True):
+        self.ckpt_name = ckpt_name
+        self.batch_size = batch_size
+        self.use_pickle = use_pickle
+
+    def generate_tsv_result(self, tsv_name, tsv_type='Valid'):
+        processor = EntityLinkingProcessor()
+        tokenizer = BertTokenizer.from_pretrained(PRETRAINED_PATH)
+
+        if tsv_type == 'Valid':
+            examples = processor.get_dev_examples(TSV_PATH + tsv_name)
+        elif tsv_type == 'Test':
+            examples = processor.get_test_examples(TSV_PATH + tsv_name)
+        else:
+            raise ValueError('tsv_type error')
+        dataloader = processor.create_dataloader(
+            examples=examples,
+            tokenizer=tokenizer,
+            max_length=384,
+            shuffle=False,
+            batch_size=self.batch_size,
+            use_pickle=self.use_pickle,
+        )
+
+        model = EntityLinkingModel.load_from_checkpoint(
+            checkpoint_path=CKPT_PATH + self.ckpt_name,
+        )
+        model.to(DEVICE)
+        model = nn.DataParallel(model)
+        model.eval()
+
+        result_list, logit_list = [], []
+        for batch in tqdm(dataloader):
+            for i in range(len(batch)):
+                batch[i] = batch[i].to(DEVICE)
+
+            input_ids, attention_mask, token_type_ids, labels = batch
+            logits = model(input_ids, attention_mask, token_type_ids)
+            preds = (logits > 0).int()
+
+            result_list.extend(preds.tolist())
+            logit_list.extend(logits.tolist())
+
+        tsv_data = pd.read_csv(TSV_PATH + tsv_name, sep='\t')
+        tsv_data['logits'] = logit_list
+        tsv_data['result'] = result_list
+        result_name = tsv_name.split('.')[0] + '_RESULT.tsv'
+        tsv_data.to_csv(RESULT_PATH + result_name, index=False, sep='\t')

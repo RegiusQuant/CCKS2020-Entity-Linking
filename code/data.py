@@ -46,8 +46,7 @@ class PicklePreprocessor:
                 text_list, predicate_list = [], []
                 for x in line['data']:
                     # 简单拼接predicate与object，这部分可以考虑别的方法尝试
-                    text_list.append(':'.join(
-                        [x['predicate'].strip(), x['object'].strip()]))
+                    text_list.append(':'.join([x['predicate'].strip(), x['object'].strip()]))
                     predicate_list.append(x['predicate'].strip())
                 if shuffle_text:  # 对属性文本随机打乱顺序
                     random.shuffle(text_list)
@@ -55,8 +54,7 @@ class PicklePreprocessor:
                 self.kbid_to_text[kbid] = ' '.join(text_list)
                 # 删除文本中的特殊字符
                 for c in ['\r', '\t', '\n']:
-                    self.kbid_to_text[kbid] = self.kbid_to_text[kbid].replace(
-                        c, '')
+                    self.kbid_to_text[kbid] = self.kbid_to_text[kbid].replace(c, '')
 
                 type_list = line['type'].split('|')
                 self.kbid_to_types[kbid] = type_list
@@ -67,12 +65,10 @@ class PicklePreprocessor:
 
         # 保存pickle文件
         pd.to_pickle(self.entity_to_kbids, PICKLE_PATH + 'ENTITY_TO_KBIDS.pkl')
-        pd.to_pickle(self.kbid_to_entities,
-                     PICKLE_PATH + 'KBID_TO_ENTITIES.pkl')
+        pd.to_pickle(self.kbid_to_entities, PICKLE_PATH + 'KBID_TO_ENTITIES.pkl')
         pd.to_pickle(self.kbid_to_text, PICKLE_PATH + 'KBID_TO_TEXT.pkl')
         pd.to_pickle(self.kbid_to_types, PICKLE_PATH + 'KBID_TO_TYPES.pkl')
-        pd.to_pickle(self.kbid_to_predicates,
-                     PICKLE_PATH + 'KBID_TO_PREDICATES.pkl')
+        pd.to_pickle(self.kbid_to_predicates, PICKLE_PATH + 'KBID_TO_PREDICATES.pkl')
         pd.to_pickle(self.idx_to_type, PICKLE_PATH + 'IDX_TO_TYPE.pkl')
         pd.to_pickle(self.type_to_idx, PICKLE_PATH + 'TYPE_TO_IDX.pkl')
         logger.info('Process Pickle File Finish.')
@@ -118,8 +114,7 @@ class DataFramePreprocessor:
                         link_dict['short_text'].append(line['text'])
                         link_dict['kb_id'].append(kbid)
                         link_dict['kb_text'].append(kbid_to_text[kbid])
-                        link_dict['kb_predicate_num'].append(
-                            len(kbid_to_predicates[kbid]))
+                        link_dict['kb_predicate_num'].append(len(kbid_to_predicates[kbid]))
                         if kbid != data['kb_id']:
                             link_dict['predict'].append(0)
                             num_negs += 1
