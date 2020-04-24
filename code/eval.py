@@ -171,7 +171,7 @@ class Eval(object):
 
 
 if __name__ == '__main__':
-    eval = Eval('../data/ccks2020_el_data_v1/dev.json', '../data/result/dev_result.json')
+    eval = Eval('../data/ccks2020_el_data_v1/dev.json', '../data/result/valid_result.json')
 
     prec, recall, f1 = eval.micro_f1()
     print(prec, recall, f1)

@@ -61,7 +61,6 @@ if not os.path.exists(TSV_PATH):
 # 训练结果的CheckPoint文件路径
 CKPT_PATH = '../ckpt/'
 
-
 PICKLE_DATA = {
     # 实体名称对应的KBID列表
     'ENTITY_TO_KBIDS': None,
