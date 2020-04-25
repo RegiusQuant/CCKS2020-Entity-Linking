@@ -113,15 +113,15 @@ def make_predication_result(input_name, output_name, el_ret_name, et_ret_name):
 
 if __name__ == '__main__':
     set_random_seed(2020)
-    # preprocess_pickle_file()
-    # preprocess_tsv_file()
-    # generate_feature_pickle()
+    preprocess_pickle_file()
+    preprocess_tsv_file()
+    generate_feature_pickle()
 
-    # train_entity_linking_model('EL_BASE_EPOCH0.ckpt')
-    # generate_link_tsv_result('EL_BASE_EPOCH0.ckpt')
+    train_entity_linking_model('EL_BASE_EPOCH0.ckpt')
+    generate_link_tsv_result('EL_BASE_EPOCH0.ckpt')
 
-    # train_entity_typing_model('ET_BASE_EPOCH1.ckpt')
-    # generate_type_tsv_result('ET_BASE_EPOCH1.ckpt')
+    train_entity_typing_model('ET_BASE_EPOCH1.ckpt')
+    generate_type_tsv_result('ET_BASE_EPOCH1.ckpt')
 
-    # make_predication_result('dev.json', 'valid_result.json', 'EL_VALID_RESULT.tsv', 'ET_VALID_RESULT.tsv')
+    make_predication_result('dev.json', 'valid_result.json', 'EL_VALID_RESULT.tsv', 'ET_VALID_RESULT.tsv')
     make_predication_result('test.json', 'test_result.json', 'EL_TEST_RESULT.tsv', 'ET_TEST_RESULT.tsv')
