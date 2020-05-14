@@ -139,3 +139,5 @@ dmypy.json
 *.tsv
 # PyTorch CKPT
 *.ckpt
+# Result File
+*.txt
